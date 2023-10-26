@@ -1,34 +1,21 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { useHalogen } from "./useHalogen";
+import { handleAction, initialState } from "./counterHalogen";
 
-function App() {
-  const [count, setCount] = useState(0);
+export const App = () => {
+  const { state, invoke } = useHalogen(initialState, handleAction);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div>
+      <button onClick={() => invoke({ kind: "decrement" })}>-</button>
+      <p>{state.count}</p>
+      <button onClick={() => invoke({ kind: "increment" })}>+</button>
+      <button onClick={() => invoke({ kind: "incrementBy", amount: 5 })}>
+        +5
+      </button>
+      <button onClick={() => invoke({ kind: "updateFromRemote" })}>
+        Fetch Remote
+      </button>
+      <p>{state.isLoading ? "Loading..." : "Idle"}</p>
+    </div>
   );
-}
-
-export default App;
+};
