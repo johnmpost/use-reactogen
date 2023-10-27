@@ -1,27 +1,39 @@
-# React + TypeScript + Vite
+# useReactogen
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+- `useReactogen` is a React hook for state and effect management inspired by Purescript's Halogen.
+- The repository is set up as an example project. The important files are [App.tsx](./src/App.tsx) and [useReactogen](./src/useReactogen.ts).
+- The hook itself is only 16 lines and has only React as a dependency. If you want to use it, copy and paste it into your project.
 
-Currently, two official plugins are available:
+# Why useReactogen
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Halogen's approach to this problem is beautiful:
 
-## Expanding the ESLint configuration
+- reducer-like state management
+- that can handle side effects
+- without unnecessary overhead and boilerplate
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+It's different from existing solutions:
 
-- Configure the top-level `parserOptions` property like this:
+### React's useReducer
 
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
-```
+- wonderful as a pure state reducer
+- doesn't handle side effects natively (you might instead define separate functions that use `dispatch` within them)
+- doesn't handle side effects cleanly (you have to define reducer actions for **all** state changes - even those that only happen alongside side effects, such as setting loading state)
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+### Redux Toolkit
+
+- **can** handle side effects cleanly (e.g. you can use `extraReducers` to do state changes, such as setting loading state, without manually defining incidental reducer actions)
+- requires a lot of boilerplate code
+- side effects are not co-located with pure state reducer actions
+
+# How To Use
+
+Here's how to think about useReactogen's architecture conceptually:
+
+- You have a `State` type which defines the shape of the state (of your app or component)
+- You have an `Action` type which defines **things you can do**. In this counter app, **incrementing** is something you can do, and **updating from remote** is something you can do. **Setting the loading state** is **NOT** something you can do. Rather, it is just something that happens alongside updating from remote.
+- You have a `handleAction` function that that accepts an action and **does something**. Technically, it returns a side-effect or a sequence of side-effects, which the `useReactogen` hook then executes. That might be a simple state update, or it might be an async fetch sandwiched between two loading state updates.
+
+You also need to provide an `initialState`. Then, in your component, you get the current state an `invoke` function that you can use to do actions.
+
+And that's it. Robust, lean, and elegant state and effect management.
