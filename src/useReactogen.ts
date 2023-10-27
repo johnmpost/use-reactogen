@@ -4,7 +4,7 @@ export type ActionHandler<State, Action> = (
   setState: (update: (previousState: State) => State) => void
 ) => (action: Action) => (previousState: State) => () => void;
 
-export const useHalogen = <State, Action>(
+export const useReactogen = <State, Action>(
   initialState: State,
   handleAction: ActionHandler<State, Action>
 ) => {

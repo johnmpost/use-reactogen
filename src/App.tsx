@@ -1,6 +1,6 @@
 import { defer } from "./utils";
 import { match } from "ts-pattern";
-import { ActionHandler, useHalogen } from "./useHalogen";
+import { ActionHandler, useReactogen } from "./useReactogen";
 
 type State = {
   count: number;
@@ -52,7 +52,7 @@ const handleAction: ActionHandler<State, Action> =
       .exhaustive();
 
 export const App = () => {
-  const { state, invoke } = useHalogen(initialState, handleAction);
+  const { state, invoke } = useReactogen(initialState, handleAction);
   const doInvoke = defer(invoke);
 
   return (
