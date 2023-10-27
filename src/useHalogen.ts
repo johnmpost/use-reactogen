@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 export type ActionHandler<State, Action> = (
-  setState: (update: (state: State) => State) => void
-) => (action: Action) => () => void;
+  setState: (update: (previousState: State) => State) => void
+) => (action: Action) => (previousState: State) => () => void;
 
 export const useHalogen = <State, Action>(
   initialState: State,
@@ -10,7 +10,7 @@ export const useHalogen = <State, Action>(
 ) => {
   const [state, setState] = useState(initialState);
 
-  const invoke = (action: Action) => handleAction(setState)(action)();
+  const invoke = (action: Action) => handleAction(setState)(action)(state)();
 
   return { state, invoke };
 };
