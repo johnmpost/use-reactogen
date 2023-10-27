@@ -45,7 +45,7 @@ const handleAction: ActionHandler<State, Action> = (setState) => (action) =>
       const newCount = await fetchRemoteCount();
       setState((s) => ({ ...s, isLoading: false, count: newCount }));
     })
-    .exhaustive()();
+    .exhaustive();
 
 export const App = () => {
   const { state, invoke } = useHalogen(initialState, handleAction);
