@@ -12,7 +12,7 @@ Halogen's approach to this problem is beautiful:
 - that can handle side effects
 - without unnecessary overhead and boilerplate
 
-It's different from existing solutions:
+It's different from other solutions:
 
 ### React's useReducer
 
@@ -26,7 +26,7 @@ It's different from existing solutions:
 - requires a lot of boilerplate code
 - side effects are not co-located with pure state reducer actions
 
-# How To Use
+# Architecture
 
 Here's how to think about useReactogen's architecture conceptually:
 
@@ -37,3 +37,64 @@ Here's how to think about useReactogen's architecture conceptually:
 You also need to provide an `initialState`. Then, in your component, you get the current state an `invoke` function that you can use to do actions.
 
 And that's it. Robust, lean, and elegant state and effect management.
+
+# How To Use
+
+To "install", simply copy the code below into a file called `useReactogen.ts`.
+
+```typescript
+import { useState } from "react";
+
+export type ActionHandler<State, Action> = (
+  setState: (update: (previousState: State) => State) => void
+) => (action: Action) => (previousState: State) => () => void;
+
+export const useReactogen = <State, Action>(
+  initialState: State,
+  handleAction: ActionHandler<State, Action>
+) => {
+  const [state, setState] = useState(initialState);
+
+  const invoke = (action: Action) => handleAction(setState)(action)(state)();
+
+  return { state, invoke };
+};
+```
+
+Then, use the hook in your component like so (a more complete example including async side effects is in [App.tsx](./src/App.tsx)):
+
+```typescript
+type State = {
+  count: number;
+};
+
+const initialState: State = {
+  count: 0,
+};
+
+type Action = { kind: "increment" };
+
+const handleAction: ActionHandler<State, Action> =
+  (setState) => (action) => (previousState) =>
+    match(action)
+      .with(
+        { kind: "increment" },
+        () => () => setState((s) => ({ ...s, count: s.count + 1 }))
+      )
+      .exhaustive();
+
+export const App = () => {
+  const { state, invoke } = useReactogen(initialState, handleAction);
+
+  return (
+    <div>
+      <p>{state.count}</p>
+      <button onClick={() => invoke({ kind: "increment" })}>+</button>
+    </div>
+  );
+};
+```
+
+# Is It Perfect?
+
+I really like how this turned out, but it might not be right for every use case. I put it online to help anyone who does find it useful and to inspire further development of this concept.
