@@ -1,6 +1,7 @@
 import { StringKeysOf, defer, removeIndex, setIndex } from "./utils";
 import { match } from "ts-pattern";
 import React, { useReducer } from "react";
+import { flow } from "fp-ts/lib/function";
 
 const titleOptions = ["", "Dr", "Lord", "His Majesty"] as const;
 type Title = (typeof titleOptions)[number];
@@ -18,8 +19,7 @@ const initialState: State = {
   title: "",
 };
 
-type SetField = {
-  kind: "setField";
+type KeyValue = {
   field: keyof State;
 } & {
   [K in keyof State]: {
@@ -27,6 +27,8 @@ type SetField = {
     newValue: State[K];
   };
 }[keyof State];
+
+type SetField = KeyValue & { kind: "setField" };
 
 type Action =
   | SetField
@@ -54,9 +56,22 @@ const reduce = (s: State, a: Action): State =>
 export const Form = () => {
   const [state, dispatch] = useReducer(reduce, initialState);
   const doDispatch = defer(dispatch);
-  const updateTextField =
-    (field: StringKeysOf<State>) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      dispatch({ kind: "setField", field, newValue: e.target.value });
+
+  const targetValue = <T extends { target: { value: string } }>(e: T) =>
+    e.target.value;
+
+  const setField = (kv: KeyValue) => dispatch({ ...kv, kind: "setField" });
+
+  const setFieldT =
+    <T extends keyof State>(field: T) =>
+    (newValue: State[T]) => ({ ...state, [field]: newValue });
+
+  const setTextField = (field: StringKeysOf<State>) => (newValue: string) =>
+    setField({ field, newValue });
+
+  const handleTextInputChange = (field: StringKeysOf<State>) =>
+    flow(targetValue, setTextField(field));
+
   const updateFriend =
     (index: number) => (e: React.ChangeEvent<HTMLInputElement>) =>
       dispatch({
@@ -64,12 +79,6 @@ export const Form = () => {
         index,
         newValue: e.target.value,
       });
-  const updateTitle = (e: React.ChangeEvent<HTMLSelectElement>) =>
-    dispatch({
-      kind: "setField",
-      field: "title",
-      newValue: e.target.value as Title,
-    });
 
   return (
     <div
@@ -80,7 +89,12 @@ export const Form = () => {
       }}
     >
       <label>Title</label>
-      <select onChange={updateTitle} value={state.title}>
+      <select
+        onChange={(e) =>
+          setField({ field: "title", newValue: e.target.value as Title })
+        }
+        value={state.title}
+      >
         {titleOptions.map((title, i) => (
           <option key={i} value={title}>
             {title}
@@ -88,9 +102,9 @@ export const Form = () => {
         ))}
       </select>
       <label>Name</label>
-      <input onChange={updateTextField("name")} value={state.name} />
+      <input onChange={handleTextInputChange("name")} value={state.name} />
       <label>Email</label>
-      <input onChange={updateTextField("email")} value={state.email} />
+      <input onChange={handleTextInputChange("email")} value={state.email} />
       <label>Friends</label>
       <button onClick={doDispatch({ kind: "addFriend" })}>+</button>
       {state.friends.map((friend, index) => (
