@@ -1,7 +1,6 @@
 import { StringKeysOf, defer, removeIndex, setIndex } from "./utils";
 import { match } from "ts-pattern";
-import { ActionHandler, useReactogen } from "./useReactogen";
-import React from "react";
+import React, { useReducer } from "react";
 
 const titleOptions = [null, "Dr", "Lord", "His Majesty"] as const;
 type State = {
@@ -34,45 +33,36 @@ type Action =
   | { kind: "removeFriend"; index: number }
   | { kind: "updateFriend"; index: number; newValue: string };
 
-const handleAction: ActionHandler<State, Action> =
-  (setState) => (action) => (_) =>
-    match(action)
-      .with(
-        { kind: "setField" },
-        ({ field, newValue }) =>
-          () =>
-            setState((s) => ({
-              ...s,
-              [field]: newValue,
-            }))
-      )
-      .with(
-        { kind: "addFriend" },
-        () => () => setState((s) => ({ ...s, friends: [...s.friends, ""] }))
-      )
-      .with(
-        { kind: "removeFriend" },
-        ({ index }) =>
-          () =>
-            setState((s) => ({ ...s, friends: removeIndex(index, s.friends) }))
-      )
-      .with(
-        { kind: "updateFriend" },
-        ({ index, newValue }) =>
-          () =>
-            setState((s) => ({
-              ...s,
-              friends: setIndex(index, newValue, s.friends),
-            }))
-      )
-      .exhaustive();
+const reduce = (s: State, action: Action): State =>
+  match(action)
+    .with({ kind: "setField" }, ({ field, newValue }) => ({
+      ...s,
+      [field]: newValue,
+    }))
+    .with({ kind: "addFriend" }, () => ({ ...s, friends: [...s.friends, ""] }))
+    .with({ kind: "removeFriend" }, ({ index }) => ({
+      ...s,
+      friends: removeIndex(index, s.friends),
+    }))
+    .with({ kind: "updateFriend" }, ({ index, newValue }) => ({
+      ...s,
+      friends: setIndex(index, newValue, s.friends),
+    }))
+    .exhaustive();
 
 export const Form = () => {
-  const { state, invoke } = useReactogen(initialState, handleAction);
-  const doInvoke = defer(invoke);
+  const [state, dispatch] = useReducer(reduce, initialState);
+  const doInvoke = defer(dispatch);
   const updateTextField =
     (field: StringKeysOf<State>) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      invoke({ kind: "setField", field, newValue: e.target.value });
+      dispatch({ kind: "setField", field, newValue: e.target.value });
+  const updateFriend =
+    (index: number) => (e: React.ChangeEvent<HTMLInputElement>) =>
+      dispatch({
+        kind: "updateFriend",
+        index,
+        newValue: e.target.value,
+      });
 
   return (
     <div
@@ -85,7 +75,7 @@ export const Form = () => {
       <label>Title</label>
       <select
         onChange={(e) =>
-          invoke({
+          dispatch({
             kind: "setField",
             field: "title",
             newValue:
@@ -109,21 +99,10 @@ export const Form = () => {
       <input onChange={updateTextField("email")} value={state.email} />
       <label>Friends</label>
       <button onClick={doInvoke({ kind: "addFriend" })}>+</button>
-      {state.friends.map((friend, i) => (
-        <div key={i}>
-          <input
-            onChange={(e) =>
-              invoke({
-                kind: "updateFriend",
-                index: i,
-                newValue: e.target.value,
-              })
-            }
-            value={friend}
-          />
-          <button onClick={doInvoke({ kind: "removeFriend", index: i })}>
-            -
-          </button>
+      {state.friends.map((friend, index) => (
+        <div key={index}>
+          <input onChange={updateFriend(index)} value={friend} />
+          <button onClick={doInvoke({ kind: "removeFriend", index })}>-</button>
         </div>
       ))}
     </div>
