@@ -2,19 +2,20 @@ import { StringKeysOf, defer, removeIndex, setIndex } from "./utils";
 import { match } from "ts-pattern";
 import React, { useReducer } from "react";
 
-const titleOptions = [null, "Dr", "Lord", "His Majesty"] as const;
+const titleOptions = ["", "Dr", "Lord", "His Majesty"] as const;
+type Title = (typeof titleOptions)[number];
 type State = {
   name: string;
   email: string;
   friends: string[];
-  title: (typeof titleOptions)[number];
+  title: Title;
 };
 
 const initialState: State = {
   name: "",
   email: "",
   friends: [],
-  title: null,
+  title: "",
 };
 
 type SetField = {
@@ -33,8 +34,8 @@ type Action =
   | { kind: "removeFriend"; index: number }
   | { kind: "updateFriend"; index: number; newValue: string };
 
-const reduce = (s: State, action: Action): State =>
-  match(action)
+const reduce = (s: State, a: Action): State =>
+  match(a)
     .with({ kind: "setField" }, ({ field, newValue }) => ({
       ...s,
       [field]: newValue,
@@ -52,7 +53,7 @@ const reduce = (s: State, action: Action): State =>
 
 export const Form = () => {
   const [state, dispatch] = useReducer(reduce, initialState);
-  const doInvoke = defer(dispatch);
+  const doDispatch = defer(dispatch);
   const updateTextField =
     (field: StringKeysOf<State>) => (e: React.ChangeEvent<HTMLInputElement>) =>
       dispatch({ kind: "setField", field, newValue: e.target.value });
@@ -63,6 +64,12 @@ export const Form = () => {
         index,
         newValue: e.target.value,
       });
+  const updateTitle = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    dispatch({
+      kind: "setField",
+      field: "title",
+      newValue: e.target.value as Title,
+    });
 
   return (
     <div
@@ -73,23 +80,10 @@ export const Form = () => {
       }}
     >
       <label>Title</label>
-      <select
-        onChange={(e) =>
-          dispatch({
-            kind: "setField",
-            field: "title",
-            newValue:
-              e.target.value === ""
-                ? null
-                : (e.target.value as (typeof titleOptions)[number]),
-          })
-        }
-        value={state.title ?? ""}
-      >
+      <select onChange={updateTitle} value={state.title}>
         {titleOptions.map((title, i) => (
-          // todo: make the null option just "", fix associated errors
-          <option key={i} value={title ?? ""}>
-            {title ?? ""}
+          <option key={i} value={title}>
+            {title}
           </option>
         ))}
       </select>
@@ -98,11 +92,13 @@ export const Form = () => {
       <label>Email</label>
       <input onChange={updateTextField("email")} value={state.email} />
       <label>Friends</label>
-      <button onClick={doInvoke({ kind: "addFriend" })}>+</button>
+      <button onClick={doDispatch({ kind: "addFriend" })}>+</button>
       {state.friends.map((friend, index) => (
         <div key={index}>
           <input onChange={updateFriend(index)} value={friend} />
-          <button onClick={doInvoke({ kind: "removeFriend", index })}>-</button>
+          <button onClick={doDispatch({ kind: "removeFriend", index })}>
+            -
+          </button>
         </div>
       ))}
     </div>

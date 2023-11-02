@@ -4,8 +4,14 @@ export const defer =
   () =>
     fn(x);
 
+// should be a type that only gets string keys and excludes string literal union types
+type IfEquals<X, Y, A = X, B = never> = (<T>() => T extends X ? 1 : 2) extends <
+  T
+>() => T extends Y ? 1 : 2
+  ? A
+  : B;
 export type StringKeysOf<T> = {
-  [K in keyof T]: T[K] extends string ? K : never;
+  [K in keyof T]: IfEquals<{ [Q in K]: T[K] }, { [Q in K]: string }, K>;
 }[keyof T];
 
 export const removeIndex = <T>(index: number, arr: T[]) =>
