@@ -1,6 +1,4 @@
-import { StringKeysOf, defer, removeIndex, setIndex } from "./utils";
-import { match } from "ts-pattern";
-import React, { useReducer } from "react";
+import { useState } from "react";
 import { flow } from "fp-ts/lib/function";
 
 const titleOptions = ["", "Dr", "Lord", "His Majesty"] as const;
@@ -19,66 +17,24 @@ const initialState: State = {
   title: "",
 };
 
-type KeyValue = {
-  field: keyof State;
-} & {
-  [K in keyof State]: {
-    field: K;
-    newValue: State[K];
-  };
-}[keyof State];
-
-type SetField = KeyValue & { kind: "setField" };
-
-type Action =
-  | SetField
-  | { kind: "addFriend" }
-  | { kind: "removeFriend"; index: number }
-  | { kind: "updateFriend"; index: number; newValue: string };
-
-const reduce = (s: State, a: Action): State =>
-  match(a)
-    .with({ kind: "setField" }, ({ field, newValue }) => ({
-      ...s,
-      [field]: newValue,
-    }))
-    .with({ kind: "addFriend" }, () => ({ ...s, friends: [...s.friends, ""] }))
-    .with({ kind: "removeFriend" }, ({ index }) => ({
-      ...s,
-      friends: removeIndex(index, s.friends),
-    }))
-    .with({ kind: "updateFriend" }, ({ index, newValue }) => ({
-      ...s,
-      friends: setIndex(index, newValue, s.friends),
-    }))
-    .exhaustive();
+type ETargetValue<T> = { target: { value: T } };
 
 export const Form = () => {
-  const [state, dispatch] = useReducer(reduce, initialState);
-  const doDispatch = defer(dispatch);
+  const [state, setState] = useState(initialState);
 
-  const targetValue = <T extends { target: { value: string } }>(e: T) =>
-    e.target.value;
+  const targetValue = <T,>(e: ETargetValue<T>): T => e.target.value;
 
-  const setField = (kv: KeyValue) => dispatch({ ...kv, kind: "setField" });
+  const usingTargetValue = <T, U>(fn: (x: T) => U) => flow(targetValue<T>, fn);
 
-  const setFieldT =
+  const usingTargetValueT =
+    <S,>() =>
+    <T, U>(fn: (x: T) => U) =>
+      flow((e: ETargetValue<S>) => e.target.value as unknown as T, fn);
+
+  const setField =
     <T extends keyof State>(field: T) =>
-    (newValue: State[T]) => ({ ...state, [field]: newValue });
-
-  const setTextField = (field: StringKeysOf<State>) => (newValue: string) =>
-    setField({ field, newValue });
-
-  const handleTextInputChange = (field: StringKeysOf<State>) =>
-    flow(targetValue, setTextField(field));
-
-  const updateFriend =
-    (index: number) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      dispatch({
-        kind: "updateFriend",
-        index,
-        newValue: e.target.value,
-      });
+    (newValue: State[T]) =>
+      setState((s) => ({ ...s, [field]: newValue }));
 
   return (
     <div
@@ -90,9 +46,7 @@ export const Form = () => {
     >
       <label>Title</label>
       <select
-        onChange={(e) =>
-          setField({ field: "title", newValue: e.target.value as Title })
-        }
+        onChange={usingTargetValueT<string>()(setField("title"))}
         value={state.title}
       >
         {titleOptions.map((title, i) => (
@@ -102,10 +56,13 @@ export const Form = () => {
         ))}
       </select>
       <label>Name</label>
-      <input onChange={handleTextInputChange("name")} value={state.name} />
+      <input onChange={usingTargetValue(setField("name"))} value={state.name} />
       <label>Email</label>
-      <input onChange={handleTextInputChange("email")} value={state.email} />
-      <label>Friends</label>
+      <input
+        onChange={usingTargetValue(setField("email"))}
+        value={state.email}
+      />
+      {/* <label>Friends</label>
       <button onClick={doDispatch({ kind: "addFriend" })}>+</button>
       {state.friends.map((friend, index) => (
         <div key={index}>
@@ -114,7 +71,7 @@ export const Form = () => {
             -
           </button>
         </div>
-      ))}
+      ))} */}
     </div>
   );
 };

@@ -19,3 +19,12 @@ export const removeIndex = <T>(index: number, arr: T[]) =>
 
 export const setIndex = <T>(index: number, newValue: T, arr: T[]) =>
   arr.map((el, i) => (i === index ? newValue : el));
+
+export type KeyValue<T> = {
+  key: keyof T;
+} & {
+  [K in keyof T]: {
+    key: K;
+    value: T[K];
+  };
+}[keyof T];
