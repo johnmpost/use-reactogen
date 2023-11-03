@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { flow } from "fp-ts/lib/function";
+import { removeIndex, setIndex } from "./utils";
 
 const titleOptions = ["", "Dr", "Lord", "His Majesty"] as const;
 type Title = (typeof titleOptions)[number];
@@ -62,16 +63,29 @@ export const Form = () => {
         onChange={usingTargetValue(setField("email"))}
         value={state.email}
       />
-      {/* <label>Friends</label>
-      <button onClick={doDispatch({ kind: "addFriend" })}>+</button>
+      <label>Friends</label>
+      <button onClick={() => setField("friends")([...state.friends, ""])}>
+        +
+      </button>
       {state.friends.map((friend, index) => (
         <div key={index}>
-          <input onChange={updateFriend(index)} value={friend} />
-          <button onClick={doDispatch({ kind: "removeFriend", index })}>
+          <input
+            onChange={(e) =>
+              setField("friends")(
+                setIndex(index, e.target.value, state.friends)
+              )
+            }
+            value={friend}
+          />
+          <button
+            onClick={() =>
+              setField("friends")(removeIndex(index, state.friends))
+            }
+          >
             -
           </button>
         </div>
-      ))} */}
+      ))}
     </div>
   );
 };
