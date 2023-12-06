@@ -34,7 +34,7 @@ Here's how to think about useReactogen's architecture conceptually:
 - You have an `Action` type which defines **things you can do**. In this counter app, **incrementing** is something you can do, and **updating from remote** is something you can do. **Setting the loading state** is **NOT** something you can do. Rather, it is just something that happens alongside updating from remote.
 - You have a `handleAction` function that that accepts an action and **does something**. Technically, it returns a side-effect or a sequence of side-effects, which the `useReactogen` hook then executes. That might be a simple state update, or it might be an async fetch sandwiched between two loading state updates.
 
-You also need to provide an `initialState`. Then, in your component, you get the current state an `invoke` function that you can use to do actions.
+You also need to provide an `initialState`. Then, in your component, you get the current state and an `invoke` function that you can use to do actions.
 
 And that's it. Robust, lean, and elegant state and effect management.
 
