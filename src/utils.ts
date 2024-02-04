@@ -1,3 +1,5 @@
+export const doNothing = () => {};
+
 export const defer =
   <T, U>(fn: (x: T) => U) =>
   (x: T) =>

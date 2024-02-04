@@ -1,11 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { SimpleApp } from "./SimpleApp";
 // import { App } from "./App.tsx";
-import { Form } from "./Form.tsx";
+// import { Form } from "./Form.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* <App /> */}
-    <Form />
+    {/* <Form /> */}
+    <SimpleApp />
   </React.StrictMode>
 );
